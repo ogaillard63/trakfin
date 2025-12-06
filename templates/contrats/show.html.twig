@@ -1,0 +1,285 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ contrat.nom }} - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Titre -->
+    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Suivi du contrat</h1>
+
+    <!-- Layout principal : 2/3 - 1/3 -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <!-- Colonne principale (2/3) -->
+        <div class="lg:col-span-2 space-y-4 sm:space-y-6 order-2 lg:order-1">
+            <!-- Graphique d'évolution -->
+            {% if evolution|length > 1 %}
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                <h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Évolution des montants</h2>
+                <div style="height: 250px;">
+                    <canvas id="evolutionChart"></canvas>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Liste des échéances -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div class="p-4 sm:p-6 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <h2 class="text-lg sm:text-xl font-semibold text-gray-900">Échéances</h2>
+                    <a href="{{ url('/echeances/create?contrat_id=' ~ contrat.id) }}" 
+                       class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center justify-center text-sm sm:text-base">
+                        <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                        Ajouter
+                    </a>
+                </div>
+
+                {% if echeances|length > 0 %}
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Montant</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Variation</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Statut</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Commentaire</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            {% for echeance in echeances %}
+                            {% set previous = echeances[loop.index] ?? null %}
+                            {% set variation_pct = previous and previous.montant > 0 ? ((echeance.montant - previous.montant) / previous.montant * 100) : 0 %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 text-sm text-gray-900">
+                                    {{ echeance.date_echeance|date_fr }}
+                                </td>
+                                <td class="px-6 py-4 text-sm text-right font-semibold text-gray-900">
+                                    {{ echeance.montant|money }}
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    {% if previous and previous.montant > 0 %}
+                                        {% if variation_pct > 0 %}
+                                            <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-red-700 bg-red-50 rounded-full">
+                                                <i data-lucide="trending-up" class="w-3 h-3 mr-1"></i>
+                                                +{{ variation_pct|number_format(1) }}%
+                                            </span>
+                                        {% elseif variation_pct < 0 %}
+                                            <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-green-700 bg-green-50 rounded-full">
+                                                <i data-lucide="trending-down" class="w-3 h-3 mr-1"></i>
+                                                {{ variation_pct|number_format(1) }}%
+                                            </span>
+                                        {% else %}
+                                            <span class="text-xs text-gray-400">—</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-xs text-gray-400">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    {% if echeance.statut == 'paye' %}
+                                        <span class="px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
+                                            Payé
+                                        </span>
+                                    {% else %}
+                                        <span class="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded-full">
+                                            Prévu
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-500">
+                                    {{ echeance.commentaire|default('—') }}
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <div class="flex items-center justify-center space-x-2">
+                                        <a href="{{ url('/echeances/' ~ echeance.id ~ '/edit') }}" 
+                                           class="text-indigo-600 hover:text-indigo-700">
+                                            <i data-lucide="edit-2" class="w-4 h-4"></i>
+                                        </a>
+                                        <form method="POST" action="{{ url('/echeances/' ~ echeance.id ~ '/delete') }}" 
+                                              onsubmit="return confirm('Supprimer cette échéance ?');" class="inline">
+                                            <button type="submit" class="text-red-600 hover:text-red-700">
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-12 text-center">
+                    <i data-lucide="calendar-x" class="w-16 h-16 mx-auto mb-4 text-gray-300"></i>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Aucune échéance</h3>
+                    <p class="text-gray-500 mb-4">Ajoutez des échéances pour ce contrat</p>
+                    <a href="{{ url('/echeances/create?contrat_id=' ~ contrat.id) }}" 
+                       class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                        <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                        Ajouter une échéance
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Sidebar (1/3) -->
+        <div class="lg:col-span-1 order-1 lg:order-2">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 lg:sticky lg:top-6">
+                <!-- Icône et nom -->
+                <div class="flex items-start space-x-4 mb-6">
+                    <div class="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" 
+                         style="background-color: {{ contrat.categorie_couleur }}20; color: {{ contrat.categorie_couleur }}">
+                        <i data-lucide="{{ contrat.categorie_icone }}" class="w-6 h-6"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h1 class="text-xl font-bold text-gray-900 mb-1 break-words">{{ contrat.nom }}</h1>
+                        {% if contrat.fournisseur %}
+                        <p class="text-sm text-gray-500">{{ contrat.fournisseur }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Badge catégorie -->
+                <div class="mb-6">
+                    <span class="inline-block px-3 py-1 text-sm font-medium rounded-full" 
+                          style="background-color: {{ contrat.categorie_couleur }}20; color: {{ contrat.categorie_couleur }}">
+                        {{ contrat.categorie_nom|default('Sans catégorie') }}
+                    </span>
+                </div>
+
+                <!-- Informations -->
+                <div class="space-y-4 mb-6">
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">Fréquence</div>
+                        <div class="font-medium text-gray-900">
+                            {% if contrat.frequence == 'mensuel' %}Mensuel
+                            {% elseif contrat.frequence == 'bimensuel' %}Bimensuel
+                            {% elseif contrat.frequence == 'trimestriel' %}Trimestriel
+                            {% elseif contrat.frequence == 'semestriel' %}Semestriel
+                            {% else %}Annuel{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">Date de début</div>
+                        <div class="font-medium text-gray-900">{{ contrat.date_debut|date_fr }}</div>
+                    </div>
+
+                    {% if contrat.notes %}
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">Notes</div>
+                        <div class="text-sm text-gray-900">{{ contrat.notes }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Statistiques financières -->
+                <div class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-lg p-4 mb-6 border border-indigo-100">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
+                        <i data-lucide="trending-up" class="w-4 h-4 mr-2 text-indigo-600"></i>
+                        Statistiques financières
+                    </h3>
+                    <div class="space-y-3">
+                        <!-- Augmentation depuis la souscription -->
+                        <div class="bg-white rounded-lg p-3 shadow-sm">
+                            <div class="text-xs text-gray-500 mb-1">Augmentation depuis souscription</div>
+                            {% if statistiques and statistiques.augmentation_euros != 0 %}
+                                <div class="flex items-baseline justify-between">
+                                    <div class="text-lg font-bold {{ statistiques.augmentation_euros > 0 ? 'text-red-600' : 'text-green-600' }}">
+                                        {{ statistiques.augmentation_euros > 0 ? '+' : '' }}{{ statistiques.augmentation_euros|number_format(2, ',', ' ') }} €
+                                    </div>
+                                    <div class="text-sm font-medium {{ statistiques.augmentation_euros > 0 ? 'text-red-600' : 'text-green-600' }}">
+                                        {{ statistiques.augmentation_pourcentage > 0 ? '+' : '' }}{{ statistiques.augmentation_pourcentage|number_format(1) }}%
+                                    </div>
+                                </div>
+                                <div class="mt-2 pt-2 border-t border-gray-100">
+                                    <div class="flex justify-between text-xs text-gray-500">
+                                        <span>Initial: {{ statistiques.montant_initial|number_format(2, ',', ' ') }} €</span>
+                                        <span>Actuel: {{ statistiques.montant_actuel|number_format(2, ',', ' ') }} €</span>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="text-sm text-gray-500">Aucune variation</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Total des échéances versées -->
+                        <div class="bg-white rounded-lg p-3 shadow-sm">
+                            <div class="text-xs text-gray-500 mb-1">Total des échéances versées</div>
+                            <div class="text-lg font-bold text-indigo-600">
+                                {{ statistiques.total_paye|default(0)|number_format(2, ',', ' ') }} €
+                            </div>
+                            {% if statistiques and statistiques.total_paye > 0 %}
+                                <div class="mt-2 flex items-center text-xs text-gray-500">
+                                    <i data-lucide="check-circle" class="w-3 h-3 mr-1 text-green-500"></i>
+                                    Échéances payées
+                                </div>
+                            {% else %}
+                                <div class="mt-2 text-xs text-gray-400">Aucun paiement enregistré</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bouton Modifier -->
+
+
+                <a href="{{ url('/contrats/' ~ contrat.id ~ '/edit') }}" 
+                   class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center justify-center">
+                    <i data-lucide="edit-2" class="w-4 h-4 mr-2"></i>
+                    Modifier
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    {% if evolution|length > 1 %}
+    const ctx = document.getElementById('evolutionChart');
+    const data = {{ evolution|json_encode|raw }};
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.map(e => new Date(e.date_echeance).toLocaleDateString('fr-FR')),
+            datasets: [{
+                label: 'Montant',
+                data: data.map(e => e.montant),
+                borderColor: '#6366F1',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                tension: 0.3,
+                fill: true,
+                pointBackgroundColor: data.map((e, i) => {
+                    if (i === 0) return '#6366F1';
+                    return e.montant > data[i-1].montant ? '#EF4444' : '#6366F1';
+                }),
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toFixed(2) + ' €';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+</script>
+{% endblock %}

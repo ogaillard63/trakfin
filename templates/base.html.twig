@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ app_name }}{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Overlay pour mobile -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden lg:hidden"></div>
+    
+    <!-- Navigation latérale -->
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
+            <div class="p-6 flex items-center justify-between">
+                <h1 class="text-2xl font-bold text-indigo-600">{{ app_name }}</h1>
+                <!-- Bouton fermer pour mobile -->
+                <button id="close-sidebar" class="lg:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <nav class="px-4 space-y-1 flex-1">
+                <a href="{{ url('/') }}" 
+                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 {% if current_page == 'dashboard' %}bg-indigo-50 text-indigo-600{% endif %}">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i>
+                    Dashboard
+                </a>
+                
+                <a href="{{ url('/contrats') }}" 
+                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 {% if current_page == 'contrats' %}bg-indigo-50 text-indigo-600{% endif %}">
+                    <i data-lucide="file-text" class="w-5 h-5 mr-3"></i>
+                    Contrats
+                </a>
+            </nav>
+            
+            <!-- Déconnexion -->
+            <div class="p-4 border-t border-gray-200">
+                <a href="{{ url('/logout') }}" 
+                   class="flex items-center px-4 py-3 text-red-600 rounded-lg hover:bg-red-50">
+                    <i data-lucide="log-out" class="w-5 h-5 mr-3"></i>
+                    Déconnexion
+                </a>
+            </div>
+        </aside>
+
+        <!-- Contenu principal -->
+        <main class="flex-1 overflow-y-auto w-full lg:w-auto">
+            <!-- Header mobile avec menu hamburger -->
+            <div class="lg:hidden sticky top-0 z-30 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
+                <button id="open-sidebar" class="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg border border-gray-300">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                    <span class="text-sm font-medium">Menu</span>
+                </button>
+                <h1 class="text-lg font-bold text-indigo-600">{{ app_name }}</h1>
+                <div class="w-16"></div> <!-- Spacer pour centrer le titre -->
+            </div>
+            
+            <div class="w-full p-4 sm:p-6 lg:p-8">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <!-- Bouton flottant -->
+    <a href="{{ url('/contrats/create') }}" 
+       class="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 w-12 h-12 sm:w-14 sm:h-14 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 flex items-center justify-center z-40">
+        <i data-lucide="plus" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+    </a>
+
+    <script>
+        // Attendre que le DOM soit chargé
+        window.addEventListener('load', function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+
+        // Gestion du menu mobile
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const openSidebarBtn = document.getElementById('open-sidebar');
+        const closeSidebarBtn = document.getElementById('close-sidebar');
+
+        function openSidebar() {
+            sidebar.classList.remove('-translate-x-full');
+            sidebarOverlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Empêcher le scroll
+        }
+
+        function closeSidebar() {
+            sidebar.classList.add('-translate-x-full');
+            sidebarOverlay.classList.add('hidden');
+            document.body.style.overflow = ''; // Réactiver le scroll
+        }
+
+        if (openSidebarBtn) {
+            openSidebarBtn.addEventListener('click', openSidebar);
+        }
+
+        if (closeSidebarBtn) {
+            closeSidebarBtn.addEventListener('click', closeSidebar);
+        }
+
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', closeSidebar);
+        }
+
+        // Fermer le menu lors du clic sur un lien de navigation (mobile uniquement)
+        const navLinks = sidebar.querySelectorAll('nav a');
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth < 1024) { // lg breakpoint
+                    closeSidebar();
+                }
+            });
+        });
+
+        // Système de Toast
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const colors = {
+                success: 'bg-green-50 border-green-200 text-green-800',
+                error: 'bg-red-50 border-red-200 text-red-800',
+                info: 'bg-blue-50 border-blue-200 text-blue-800'
+            };
+            
+            const icons = {
+                success: 'check-circle',
+                error: 'x-circle',
+                info: 'info'
+            };
+            
+            toast.className = `flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg ${colors[type]} transform transition-all duration-300 ease-out translate-x-full opacity-0`;
+            toast.innerHTML = `
+                <i data-lucide="${icons[type]}" class="w-5 h-5 flex-shrink-0"></i>
+                <span class="flex-1">${message}</span>
+                <button onclick="this.parentElement.remove()" class="hover:opacity-70">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            `;
+            
+            container.appendChild(toast);
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            
+            // Animation d'entrée
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full', 'opacity-0');
+            }, 10);
+            
+            // Auto-suppression après 3 secondes
+            setTimeout(() => {
+                toast.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Afficher les flash messages au chargement
+        {% if flash.success %}
+        showToast("{{ flash.success }}", 'success');
+        {% endif %}
+        
+        {% if flash.error %}
+        showToast("{{ flash.error }}", 'error');
+        {% endif %}
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

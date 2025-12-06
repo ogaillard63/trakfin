@@ -1,0 +1,21 @@
+# Vendor
+/vendor/
+
+# Cache
+/cache/
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local

@@ -1,0 +1,154 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Dashboard - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header avec sélecteur de mois -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
+        
+        <div class="flex items-center justify-center sm:justify-end space-x-2">
+            {% set prev_month = month - 1 %}
+            {% set prev_year = year %}
+            {% if prev_month < 1 %}
+                {% set prev_month = 12 %}
+                {% set prev_year = year - 1 %}
+            {% endif %}
+            
+            {% set next_month = month + 1 %}
+            {% set next_year = year %}
+            {% if next_month > 12 %}
+                {% set next_month = 1 %}
+                {% set next_year = year + 1 %}
+            {% endif %}
+            
+            <a href="{{ url('/?year=' ~ prev_year ~ '&month=' ~ prev_month) }}" 
+               class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+            </a>
+            <span class="px-3 sm:px-4 py-2 font-medium text-gray-900 text-sm sm:text-base">
+                {{ month|mois_fr }} {{ year }}
+            </span>
+            <a href="{{ url('/?year=' ~ next_year ~ '&month=' ~ next_month) }}" 
+               class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Échéances du mois -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div class="p-4 sm:p-6 border-b border-gray-200">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <h2 class="text-lg sm:text-xl font-semibold text-gray-900">Échéances du mois</h2>
+                <div class="text-xl sm:text-2xl font-bold text-indigo-600">
+                    {{ total_mois|money }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="divide-y divide-gray-100">
+            {% if echeances_mois|length > 0 %}
+                {% for echeance in echeances_mois %}
+                <div class="p-3 sm:p-4 hover:bg-gray-50">
+                    <div class="flex items-start sm:items-center gap-3 sm:gap-4">
+                        <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" 
+                             style="background-color: {{ echeance.categorie_couleur }}20; color: {{ echeance.categorie_couleur }}">
+                            <i data-lucide="{{ echeance.categorie_icone }}" class="w-5 h-5"></i>
+                        </div>
+                        
+                        <div class="flex-1 min-w-0">
+                            <div class="font-medium text-gray-900 text-sm sm:text-base truncate">{{ echeance.contrat_nom }}</div>
+                            <div class="text-xs sm:text-sm text-gray-500">{{ echeance.date_echeance|date_fr }}</div>
+                        </div>
+                        
+                        <div class="text-right flex-shrink-0">
+                            <div class="font-semibold text-gray-900 text-sm sm:text-base">{{ echeance.montant|money }}</div>
+                        </div>
+                        
+                        <div class="flex-shrink-0">
+                            {% if echeance.statut == 'paye' %}
+                                <span class="px-2 sm:px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
+                                    Payé
+                                </span>
+                            {% else %}
+                                <form method="POST" action="{{ url('/echeances/' ~ echeance.id  ~ '/payer') }}" class="inline">
+                                    <button type="submit" 
+                                            class="px-2 sm:px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200">
+                                        Prévu
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="p-8 text-center text-gray-500">
+                    <i data-lucide="calendar-x" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
+                    <p>Aucune échéance ce mois-ci</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <!-- Contrats ayant augmenté -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="p-4 sm:p-6 border-b border-gray-200">
+                <h2 class="text-lg sm:text-xl font-semibold text-gray-900">Contrats ayant augmenté</h2>
+            </div>
+            
+            <div class="divide-y divide-gray-100">
+                {% if contrats_augmentation|length > 0 %}
+                    {% for contrat in contrats_augmentation %}
+                    <a href="{{ url('/contrats/' ~ contrat.id) }}" 
+                       class="block p-3 sm:p-4 hover:bg-gray-50">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="flex-1 min-w-0">
+                                <div class="font-medium text-gray-900 text-sm sm:text-base truncate">{{ contrat.nom }}</div>
+                                <div class="text-xs sm:text-sm text-gray-500">
+                                    {{ contrat.avant_dernier_montant|money }} → {{ contrat.dernier_montant|money }}
+                                </div>
+                            </div>
+                            <div class="text-red-600 font-semibold text-sm sm:text-base flex-shrink-0">
+                                <i data-lucide="trending-up" class="w-4 h-4 inline"></i>
+                                +{{ contrat.pourcentage_augmentation|number_format(1) }}%
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                {% else %}
+                    <div class="p-8 text-center text-gray-500">
+                        <i data-lucide="check-circle" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
+                        <p class="text-sm sm:text-base">Aucune augmentation détectée</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Projection annuelle -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="p-4 sm:p-6 border-b border-gray-200">
+                <h2 class="text-lg sm:text-xl font-semibold text-gray-900">Projection annuelle</h2>
+            </div>
+            
+            <div class="p-6">
+                <div class="text-center">
+                    <div class="text-3xl sm:text-4xl font-bold text-indigo-600 mb-2">
+                        {{ projection_annuelle|money }}
+                    </div>
+                    <div class="text-xs sm:text-sm text-gray-500">
+                        Échéances restantes pour {{ year }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}

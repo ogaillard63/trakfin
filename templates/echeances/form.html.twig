@@ -1,0 +1,124 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ echeance ? 'Modifier' : 'Nouvelle' }} échéance - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h1 class="text-2xl font-bold text-gray-900 mb-6">
+            {{ echeance ? 'Modifier l\'échéance' : 'Nouvelle échéance' }}
+        </h1>
+
+        <form method="POST" action="{{ echeance ? url('/echeances/') ~ echeance.id ~ '/edit' : url('/echeances/create') }}">
+            <!-- Contrat -->
+            <div class="mb-4">
+                <label for="contrat_id" class="block text-sm font-medium text-gray-700 mb-2">
+                    Contrat *
+                </label>
+                <select id="contrat_id" name="contrat_id" required
+                        {% if echeance %}disabled{% endif %}
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <option value="">Sélectionnez un contrat</option>
+                    {% for contrat in contrats %}
+                        <option value="{{ contrat.id }}" 
+                                {% if (echeance and echeance.contrat_id == contrat.id) or (contrat_id == contrat.id) %}selected{% endif %}>
+                            {{ contrat.nom }}
+                        </option>
+                    {% endfor %}
+                </select>
+                {% if echeance %}
+                <input type="hidden" name="contrat_id" value="{{ echeance.contrat_id }}">
+                {% endif %}
+            </div>
+
+            <!-- Date -->
+            <div class="mb-4">
+                <label for="date_echeance" class="block text-sm font-medium text-gray-700 mb-2">
+                    Date d'échéance *
+                    {% if date_suggeree and not echeance %}
+                    <span class="text-xs text-indigo-600">(calculée automatiquement)</span>
+                    {% endif %}
+                </label>
+                <input type="date" id="date_echeance" name="date_echeance" required
+                       value="{{ echeance.date_echeance|default(date_suggeree|default('now'|date('Y-m-d'))) }}"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            </div>
+
+            <!-- Montant -->
+            <div class="mb-4">
+                <label for="montant" class="block text-sm font-medium text-gray-700 mb-2">
+                    Montant *
+                    {% if montant_suggere and not echeance %}
+                    <span class="text-xs text-indigo-600">(basé sur la dernière échéance)</span>
+                    {% endif %}
+                </label>
+                <div class="relative">
+                    <input type="text" id="montant" name="montant" required
+                           value="{{ echeance.montant|default(montant_suggere|default('0'))|number_format(2, ',', ' ') }}"
+                           class="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                           placeholder="0,00">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-gray-500">
+                        €
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statut -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Statut *
+                </label>
+                <div class="flex space-x-4">
+                    <label class="flex items-center">
+                        <input type="radio" name="statut" value="prevu" 
+                               {% if not echeance or echeance.statut == 'prevu' %}checked{% endif %}
+                               class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
+                        <span class="ml-2 text-gray-700">Prévu</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="statut" value="paye"
+                               {% if echeance.statut == 'paye' %}checked{% endif %}
+                               class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
+                        <span class="ml-2 text-gray-700">Payé</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Commentaire -->
+            <div class="mb-6">
+                <label for="commentaire" class="block text-sm font-medium text-gray-700 mb-2">
+                    Commentaire
+                </label>
+                <textarea id="commentaire" name="commentaire" rows="3"
+                          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          placeholder="Commentaire optionnel...">{{ echeance.commentaire|default('') }}</textarea>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex justify-between">
+                <a href="javascript:history.back()" 
+                   class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
+                    Annuler
+                </a>
+                
+                <button type="submit" 
+                        class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                    {{ echeance ? 'Enregistrer' : 'Créer' }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+
+    // Format montant
+    document.getElementById('montant').addEventListener('blur', function() {
+        let v = this.value.replace(/[^\d,.-]/g, '').replace(',', '.');
+        if (v && !isNaN(parseFloat(v))) {
+            this.value = parseFloat(v).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+    });
+</script>
+{% endblock %}
