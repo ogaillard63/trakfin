@@ -11,8 +11,31 @@ use App\Auth;
 use App\Model\Contrat;
 use App\Model\Echeance;
 use App\Model\Category;
+use App\ApiController;
 
 $router = new Router(APP_URL);
+
+// ===== API REST =====
+$api = new ApiController();
+
+$router->get('/api', [$api, 'index']);
+$router->get('/api/sync', [$api, 'sync']);
+
+// Contrats
+$router->get('/api/contrats', [$api, 'listContrats']);
+$router->post('/api/contrats', [$api, 'createContrat']);
+$router->get('/api/contrats/{id}', [$api, 'getContrat']);
+$router->put('/api/contrats/{id}', [$api, 'updateContrat']);
+$router->delete('/api/contrats/{id}', [$api, 'deleteContrat']);
+
+// Échéances
+$router->get('/api/echeances', [$api, 'listEcheances']);
+$router->post('/api/echeances', [$api, 'createEcheance']);
+$router->put('/api/echeances/{id}', [$api, 'updateEcheance']);
+$router->delete('/api/echeances/{id}', [$api, 'deleteEcheance']);
+
+// Catégories
+$router->get('/api/categories', [$api, 'listCategories']);
 
 // ===== AUTHENTIFICATION =====
 $router->get('/login', function () {
@@ -42,6 +65,14 @@ $router->post('/login', function () {
 $router->get('/logout', function () {
     Auth::logout();
     Router::redirect('/login');
+});
+
+// ===== PAGES =====
+$router->get('/about', function () {
+    Auth::requireAuth();
+    View::display('about.html.twig', [
+        'current_page' => 'about'
+    ]);
 });
 
 // ===== DASHBOARD =====

@@ -1,5 +1,16 @@
 RewriteEngine On
 
+# Force MIME types for PWA files
+<IfModule mod_mime.c>
+  AddType application/manifest+json .json
+  AddType application/javascript .js
+</IfModule>
+
+# Stop rewriting for these specific files
+RewriteRule ^manifest\.json$ - [L]
+RewriteRule ^sw\.js$ - [L]
+RewriteRule ^public/.*$ - [L]
+
 # Rediriger toutes les requêtes vers index.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

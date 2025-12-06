@@ -56,9 +56,21 @@ class Auth
     public static function requireAuth(): void
     {
         if (!self::check()) {
+            if (self::isApiRequest()) {
+                header('Content-Type: application/json');
+                http_response_code(401);
+                echo json_encode(['error' => 'Non authentifié']);
+                exit;
+            }
+            
             header('Location: /login');
             exit;
         }
+    }
+
+    private static function isApiRequest(): bool
+    {
+        return strpos($_SERVER['REQUEST_URI'], '/api/') !== false;
     }
 
     /**

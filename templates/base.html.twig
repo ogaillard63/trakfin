@@ -6,9 +6,66 @@
     <title>{% block title %}{{ app_name }}{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link rel="manifest" href="{{ url('/manifest.json') }}">
+    <script>
+        window.APP_API_URL = "{{ url('/api/sync') }}";
+    </script>
+    <script src="{{ url('/public/js/sync.js') }}" defer></script>
+    <meta name="theme-color" content="#4F46E5">
+    <link rel="icon" type="image/png" href="{{ url('/public/icons/icon-192x192.png') }}">
+    <link rel="apple-touch-icon" href="{{ url('/public/icons/icon-192x192.png') }}">
     <style>
         [x-cloak] { display: none !important; }
     </style>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register("{{ url('/sw.js') }}")
+                    .then(registration => {
+                        console.log('SW enregistré:', registration);
+                    })
+                    .catch(error => {
+                        console.log('Erreur SW:', error);
+                    });
+            });
+        }
+
+        // Gestion de l'installation PWA
+        let deferredPrompt;
+        const installButton = document.createElement('button');
+        installButton.innerHTML = '<i data-lucide="download" class="w-5 h-5 mr-2"></i>Installer l\'app';
+        installButton.className = 'fixed bottom-20 right-6 sm:bottom-24 sm:right-8 px-4 py-2 bg-green-600 text-white rounded-lg shadow-lg hover:bg-green-700 flex items-center z-40 hidden';
+        installButton.id = 'install-button';
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installButton.classList.remove('hidden');
+        });
+
+        installButton.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    console.log('User accepted the install prompt');
+                } else {
+                    console.log('User dismissed the install prompt');
+                }
+                deferredPrompt = null;
+                installButton.classList.add('hidden');
+            }
+        });
+
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA was installed');
+            installButton.classList.add('hidden');
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.appendChild(installButton);
+        });
+    </script>
 </head>
 <body class="bg-gray-50">
     <!-- Overlay pour mobile -->
@@ -40,8 +97,20 @@
                 </a>
             </nav>
             
-            <!-- Déconnexion -->
-            <div class="p-4 border-t border-gray-200">
+            <!-- Sync & Déconnexion -->
+            <div class="p-4 border-t border-gray-200 space-y-2">
+                <button onclick="window.forceSync()" 
+                        class="w-full flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors group">
+                    <i id="btn-sync" data-lucide="refresh-cw" class="w-5 h-5 mr-3 text-gray-400 group-hover:text-indigo-600 transition-colors"></i>
+                    Synchroniser
+                </button>
+                
+                <a href="{{ url('/about') }}" 
+                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 {% if current_page == 'about' %}bg-indigo-50 text-indigo-600{% endif %}">
+                    <i data-lucide="info" class="w-5 h-5 mr-3"></i>
+                    À propos
+                </a>
+
                 <a href="{{ url('/logout') }}" 
                    class="flex items-center px-4 py-3 text-red-600 rounded-lg hover:bg-red-50">
                     <i data-lucide="log-out" class="w-5 h-5 mr-3"></i>
@@ -71,11 +140,8 @@
     <!-- Toast Container -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
-    <!-- Bouton flottant -->
-    <a href="{{ url('/contrats/create') }}" 
-       class="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 w-12 h-12 sm:w-14 sm:h-14 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 flex items-center justify-center z-40">
-        <i data-lucide="plus" class="w-5 h-5 sm:w-6 sm:h-6"></i>
-    </a>
+
+
 
     <script>
         // Attendre que le DOM soit chargé

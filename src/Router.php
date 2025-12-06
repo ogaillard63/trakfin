@@ -8,7 +8,9 @@ class Router
 
     public function __construct(string $baseUrl = '')
     {
-        $this->baseUrl = rtrim($baseUrl, '/');
+        // Enregistrer seulement le chemin (path) de l'URL de base pour le routing
+        $path = parse_url($baseUrl, PHP_URL_PATH) ?? '';
+        $this->baseUrl = rtrim($path, '/');
     }
 
     public function get(string $path, callable $callback): void
@@ -19,6 +21,16 @@ class Router
     public function post(string $path, callable $callback): void
     {
         $this->addRoute('POST', $path, $callback);
+    }
+
+    public function put(string $path, callable $callback): void
+    {
+        $this->addRoute('PUT', $path, $callback);
+    }
+
+    public function delete(string $path, callable $callback): void
+    {
+        $this->addRoute('DELETE', $path, $callback);
     }
 
     private function addRoute(string $method, string $path, callable $callback): void
@@ -64,7 +76,10 @@ class Router
 
     public static function redirect(string $path): void
     {
-        header('Location: ' . APP_URL . $path);
+        // Redirection relative à la racine pour préserver le HTTPS
+        $basePath = parse_url(APP_URL, PHP_URL_PATH) ?? '';
+        $basePath = rtrim($basePath, '/');
+        header('Location: ' . $basePath . $path);
         exit;
     }
 }

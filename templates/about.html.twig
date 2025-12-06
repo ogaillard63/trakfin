@@ -1,0 +1,52 @@
+{% extends "base.html.twig" %}
+
+{% block title %}À propos - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+    <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div class="px-6 py-8 sm:p-10 text-center">
+            <!-- Logo -->
+            <div class="mx-auto mb-8 flex justify-center">
+                <img src="{{ url('/public/icons/icon-512x512.png') }}" alt="Logo TrakFin" class="w-32 h-32 object-contain drop-shadow-xl">
+            </div>
+
+            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight sm:text-4xl mb-2">
+                {{ app_name }}
+            </h1>
+            <p class="text-lg text-gray-500 font-medium mb-8">
+                Suivez vos contrats récurrents et leurs échéances
+            </p>
+
+            <div class="border-t border-gray-100 pt-8">
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Version</dt>
+                        <dd class="mt-1 text-lg font-semibold text-gray-900">1.0</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Date de sortie</dt>
+                        <dd class="mt-1 text-lg font-semibold text-gray-900">Décembre 2025</dd>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <dt class="text-sm font-medium text-gray-500">Développé par</dt>
+                        <dd class="mt-1 text-lg font-semibold text-indigo-600">Oliver Gaillard</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <div class="mt-10 text-sm text-gray-400">
+                <p>&copy; {{ "now"|date("Y") }} {{ app_name }}. Tous droits réservés.</p>
+            </div>
+        </div>
+        
+        <!-- Pied de page décoratif -->
+        <div class="bg-gray-50 px-6 py-4 sm:px-10 border-t border-gray-100 flex justify-center">
+            <a href="https://github.com/ogaillard63/trakfin" target="_blank" class="text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-2">
+                <i data-lucide="github" class="w-5 h-5"></i>
+                <span class="font-medium">Voir le code source</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

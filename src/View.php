@@ -42,8 +42,12 @@ class View
             }));
 
             // Fonction url()
+            // Fonction url()
             self::$twig->addFunction(new \Twig\TwigFunction('url', function ($path) {
-                return APP_URL . $path;
+                // Utiliser le chemin relatif à la racine pour éviter les problèmes de protocole (Mixed Content)
+                $basePath = parse_url(APP_URL, PHP_URL_PATH) ?? '';
+                $basePath = rtrim($basePath, '/');
+                return $basePath . $path;
             }));
 
             // Variables globales
