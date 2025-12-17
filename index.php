@@ -12,6 +12,7 @@ use App\Model\Contrat;
 use App\Model\Echeance;
 use App\Model\Category;
 use App\ApiController;
+use App\BackupManager;
 
 $router = new Router(APP_URL);
 
@@ -86,7 +87,8 @@ $router->get('/', function () {
     $month = (int)($_GET['month'] ?? date('m'));
     
     // Générer automatiquement les échéances manquantes jusqu'au mois affiché
-    $echeanceModel->genererEcheancesManquantes($year, $month);
+    // Générer automatiquement les échéances manquantes jusqu'au mois affiché
+    // $echeanceModel->genererEcheancesManquantes($year, $month); // DÉSACTIVÉ : Gestion virtuelle
     
     View::display('dashboard.html.twig', [
         'current_page' => 'dashboard',
@@ -283,7 +285,31 @@ $router->get('/echeances/{id}/edit', function ($id) {
     $echeanceModel = new Echeance();
     $contratModel = new Contrat();
     
-    $echeance = $echeanceModel->getById((int) $id);
+    $echeance = null;
+    $isVirtual = strpos($id, 'virtual_') === 0;
+
+    if ($isVirtual) {
+        // ID format: virtual_{contrat_id}_{YYYYMMDD}
+        $parts = explode('_', $id);
+        $contratId = (int)$parts[1];
+        $dateStr = $parts[2];
+        $dateFormatted = substr($dateStr, 0, 4) . '-' . substr($dateStr, 4, 2) . '-' . substr($dateStr, 6, 2);
+        
+        $contrat = $contratModel->getById($contratId);
+        if ($contrat) {
+            $echeance = [
+                'id' => $id,
+                'contrat_id' => $contratId,
+                'date_echeance' => $dateFormatted,
+                'montant' => $contrat['dernier_montant'] ?? 0,
+                'statut' => 'prevu',
+                'commentaire' => 'Échéance provisionnelle'
+            ];
+        }
+    } else {
+        $echeance = $echeanceModel->getById((int) $id);
+    }
+
     if (!$echeance) {
         Router::redirect('/');
     }
@@ -300,14 +326,27 @@ $router->post('/echeances/{id}/edit', function ($id) {
     
     $montant = str_replace([' ', ','], ['', '.'], $_POST['montant']);
     
-    $echeanceModel->update((int) $id, [
-        'date_echeance' => $_POST['date_echeance'],
-        'montant' => (float) $montant,
-        'statut' => $_POST['statut'] ?? 'prevu',
-        'commentaire' => $_POST['commentaire'] ?? null,
-    ]);
-    
-    View::flash('success', 'Échéance modifiée');
+    $montant = str_replace([' ', ','], ['', '.'], $_POST['montant']);
+    $isVirtual = strpos($id, 'virtual_') === 0;
+
+    if ($isVirtual) {
+        $echeanceModel->create([
+            'contrat_id' => (int) $_POST['contrat_id'],
+            'date_echeance' => $_POST['date_echeance'],
+            'montant' => (float) $montant,
+            'statut' => $_POST['statut'] ?? 'prevu',
+            'commentaire' => $_POST['commentaire'] ?? null,
+        ]);
+        View::flash('success', 'Échéance créée (validée)');
+    } else {
+        $echeanceModel->update((int) $id, [
+            'date_echeance' => $_POST['date_echeance'],
+            'montant' => (float) $montant,
+            'statut' => $_POST['statut'] ?? 'prevu',
+            'commentaire' => $_POST['commentaire'] ?? null,
+        ]);
+        View::flash('success', 'Échéance modifiée');
+    }
     
     if (!empty($_POST['contrat_id'])) {
         Router::redirect('/contrats/' . $_POST['contrat_id']);
@@ -318,7 +357,28 @@ $router->post('/echeances/{id}/edit', function ($id) {
 
 $router->post('/echeances/{id}/payer', function ($id) {
     $echeanceModel = new Echeance();
-    $echeanceModel->marquerPaye((int) $id);
+    
+    if (strpos($id, 'virtual_') === 0) {
+        // C'est une échéance virtuelle, on la crée comme payée
+        $parts = explode('_', $id);
+        $contratId = (int)$parts[1];
+        $dateStr = $parts[2];
+        $dateFormatted = substr($dateStr, 0, 4) . '-' . substr($dateStr, 4, 2) . '-' . substr($dateStr, 6, 2);
+        
+        // Récupérer montant suggéré
+        $contratModel = new Contrat();
+        $contrat = $contratModel->getById($contratId);
+        $montant = $contrat['dernier_montant'] ?? 0;
+        
+        $echeanceModel->create([
+            'contrat_id' => $contratId,
+            'date_echeance' => $dateFormatted,
+            'montant' => $montant,
+            'statut' => 'paye'
+        ]);
+    } else {
+        $echeanceModel->marquerPaye((int) $id);
+    }
     
     $referer = $_SERVER['HTTP_REFERER'] ?? '/';
     header('Location: ' . $referer);
@@ -326,6 +386,13 @@ $router->post('/echeances/{id}/payer', function ($id) {
 });
 
 $router->post('/echeances/{id}/delete', function ($id) {
+    if (strpos($id, 'virtual_') === 0) {
+        // Impossible de supprimer une échéance virtuelle sans modifier le contrat
+        View::flash('error', 'Impossible de supprimer une échéance prévisionnelle automatique.');
+        Router::redirect('/');
+        return;
+    }
+    
     $echeanceModel = new Echeance();
     $echeance = $echeanceModel->getById((int) $id);
     $echeanceModel->delete((int) $id);
@@ -337,6 +404,46 @@ $router->post('/echeances/{id}/delete', function ($id) {
     } else {
         Router::redirect('/');
     }
+});
+
+// ===== MAINTENANCE =====
+$router->get('/maintenance', function () {
+    Auth::requireAuth();
+    $backupManager = new BackupManager();
+    
+    View::display('maintenance/index.html.twig', [
+        'current_page' => 'maintenance',
+        'backups' => $backupManager->getList(),
+        'flash' => View::getFlash(),
+    ]);
+});
+
+$router->post('/maintenance/backup', function () {
+    Auth::requireAuth();
+    $backupManager = new BackupManager();
+    
+    if ($filename = $backupManager->createBackup()) {
+        View::flash('success', "Sauvegarde créée : $filename");
+    } else {
+        $error = $backupManager->getLastError();
+        View::flash('error', "Erreur lors de la création de la sauvegarde : " . $error);
+    }
+    
+    Router::redirect('/maintenance');
+});
+
+$router->post('/maintenance/restore', function () {
+    Auth::requireAuth();
+    $backupManager = new BackupManager();
+    $filename = $_POST['filename'] ?? '';
+    
+    if ($backupManager->restoreBackup($filename)) {
+        View::flash('success', "Base de données restaurée depuis $filename");
+    } else {
+        View::flash('error', "Erreur lors de la restauration");
+    }
+    
+    Router::redirect('/maintenance');
 });
 
 // Dispatch

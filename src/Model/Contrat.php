@@ -32,7 +32,7 @@ class Contrat
                 FROM contrats c
                 LEFT JOIN categories cat ON c.categorie_id = cat.id
                 {$where}
-                ORDER BY c.nom ASC";
+                ORDER BY cat.nom ASC, c.nom ASC";
 
         $stmt = $this->db->query($sql);
         return $stmt->fetchAll();
@@ -43,7 +43,10 @@ class Contrat
         $sql = "SELECT c.*, 
                        cat.nom as categorie_nom,
                        cat.couleur as categorie_couleur,
-                       cat.icone as categorie_icone
+                       cat.icone as categorie_icone,
+                       (SELECT e.montant FROM echeances e 
+                        WHERE e.contrat_id = c.id 
+                        ORDER BY e.date_echeance DESC LIMIT 1) as dernier_montant
                 FROM contrats c
                 LEFT JOIN categories cat ON c.categorie_id = cat.id
                 WHERE c.id = :id";

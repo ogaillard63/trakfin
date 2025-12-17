@@ -19,3 +19,7 @@ Thumbs.db
 # Environment
 .env
 .env.local
+
+# Backups
+database/backups/*.sql
+database/backups/*.zip

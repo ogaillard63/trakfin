@@ -55,7 +55,106 @@ class Echeance
     public function getEcheancesDuMois(int $year, int $month): array
     {
         $mois = sprintf('%04d-%02d', $year, $month);
-        return $this->getAll(['mois' => $mois]);
+        
+        // 1. Récupérer les échéances RÉELLES (payées ou modifiées manuellement)
+        // On exclut les 'prevu' qui sont purement automatiques (si on change de logique)
+        // Mais pour la transition, on va considérer que tout ce qui est en base est "réel" 
+        // ou a été validé.
+        $reelles = $this->getAll(['mois' => $mois]);
+        
+        // Indexer par contrat_id pour vérification rapide
+        $reellesParContrat = [];
+        foreach ($reelles as $ech) {
+            $reellesParContrat[$ech['contrat_id']] = $ech;
+        }
+
+        // 2. Générer les virtuelles pour les contrats actifs
+        $contratModel = new Contrat();
+        $contrats = $contratModel->getAll(true); // Actifs seulement
+        
+        $virtuelles = [];
+        $dateDebutMois = new \DateTime("$year-$month-01");
+        $dateFinMois = (clone $dateDebutMois)->modify('last day of this month');
+
+        foreach ($contrats as $contrat) {
+            // Si une échéance réelle existe déjà pour ce mois, on ne génère rien
+            if (isset($reellesParContrat[$contrat['id']])) {
+                continue;
+            }
+
+            // Vérifier si une échéance "tombe" ce mois-ci
+            $dateEcheance = $this->calculeDateEcheanceMois($contrat, $dateDebutMois, $dateFinMois);
+            
+            if ($dateEcheance) {
+                // Trouver le dernier montant connu
+                $dernierMontant = $contrat['dernier_montant'] ?? 0;
+                
+                $virtuelles[] = [
+                    'id' => 'virtual_' . $contrat['id'] . '_' . $dateEcheance->format('Ymd'),
+                    'contrat_id' => $contrat['id'],
+                    'date_echeance' => $dateEcheance->format('Y-m-d'),
+                    'montant' => $dernierMontant,
+                    'statut' => 'prevu', // Statut simulé
+                    'commentaire' => 'Provisionnel',
+                    'contrat_nom' => $contrat['nom'],
+                    'fournisseur' => $contrat['fournisseur'],
+                    'categorie_nom' => $contrat['categorie_nom'],
+                    'categorie_couleur' => $contrat['categorie_couleur'],
+                    'categorie_icone' => $contrat['categorie_icone'],
+                    'is_virtual' => true
+                ];
+            }
+        }
+
+        // 3. Fusionner et trier
+        $toutes = array_merge($reelles, $virtuelles);
+        usort($toutes, function($a, $b) {
+            return $b['date_echeance'] <=> $a['date_echeance'];
+        });
+
+        return $toutes;
+    }
+
+    private function calculeDateEcheanceMois(array $contrat, \DateTime $debutMois, \DateTime $finMois): ?\DateTime
+    {
+        $debutContrat = new \DateTime($contrat['date_debut']);
+        
+        // Si le contrat commence après le mois en question, pas d'échéance
+        if ($debutContrat > $finMois) {
+            return null;
+        }
+
+        // Calcul simple pour mensuel
+        if ($contrat['frequence'] === 'mensuel') {
+            // L'échéance est au même jour que le début du contrat
+            $jour = $debutContrat->format('d');
+            // Attention aux mois courts (ex: 31 janvier -> avril)
+            // On prend le jour, s'il dépasse le nombre de jours du mois, on prend le dernier jour
+            $maxJours = $finMois->format('d');
+            $jour = min($jour, $maxJours);
+            return new \DateTime($debutMois->format('Y-m-') . $jour);
+        }
+
+        // Pour les autres fréquences, il faut itérer ou calculer modulo
+        $interval = match($contrat['frequence']) {
+            'bimensuel' => 'P2M',
+            'trimestriel' => 'P3M',
+            'semestriel' => 'P6M',
+            'annuel' => 'P1Y',
+            default => 'P1M'
+        };
+
+        // On part de la date de début et on avance jusqu'à trouver une date dans le mois cible
+        // Optimisation possible : calculer le nombre d'intervalles approximatif
+        $date = clone $debutContrat;
+        while ($date <= $finMois) {
+            if ($date >= $debutMois && $date <= $finMois) {
+                return clone $date;
+            }
+            $date->add(new \DateInterval($interval));
+        }
+
+        return null;
     }
 
     public function getById(int $id): ?array
@@ -123,31 +222,50 @@ class Echeance
 
     public function getTotalMois(int $year, int $month): float
     {
-        $mois = sprintf('%04d-%02d', $year, $month);
-        
-        $sql = "SELECT SUM(montant) as total
-                FROM echeances
-                WHERE DATE_FORMAT(date_echeance, '%Y-%m') = :mois";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute(['mois' => $mois]);
-        $result = $stmt->fetch();
-
-        return (float) ($result['total'] ?? 0);
+        $echeances = $this->getEcheancesDuMois($year, $month);
+        $total = 0;
+        foreach ($echeances as $e) {
+            $total += (float) $e['montant'];
+        }
+        return $total;
     }
 
     public function getProjectionAnnuelle(int $year): float
     {
-        $sql = "SELECT SUM(montant) as total
-                FROM echeances
-                WHERE YEAR(date_echeance) = :year
-                AND date_echeance >= CURDATE()";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute(['year' => $year]);
-        $result = $stmt->fetch();
-
-        return (float) ($result['total'] ?? 0);
+        $total = 0;
+        // On calcule la projection pour l'année entière ou juste le reste ?
+        // La logique précédente était "reste à payer" (date >= CURDATE)
+        // Gardons cette logique mais en utilisant la méthode virtuelle
+        
+        $currentMonth = (int)date('m');
+        $currentYear = (int)date('Y');
+        
+        // Si on regarde une année passée, le reste à payer est 0
+        if ($year < $currentYear) return 0;
+        
+        // Si on regarde l'année en cours, on commence au mois courant
+        // Si on regarde une année future, on commence en janvier
+        $startMonth = ($year == $currentYear) ? $currentMonth : 1;
+        
+        for ($m = $startMonth; $m <= 12; $m++) {
+            $echeances = $this->getEcheancesDuMois($year, $m);
+            foreach ($echeances as $ech) {
+                // Si c'est le mois courant, on ne compte que ce qui est futur (optionnel, selon besoin)
+                // Ma logique précédente regardait la date exacte.
+                // On va simplifier : somme de tout ce qui est prévu/virtuel ou payé
+                // ATTENTION : La demande originale était pour une "projection".
+                // Souvent "projection" = ce qui reste à sortir.
+                // Mais sur le dashboard, on veut souvent "Total Annuel Estimé".
+                // Le code précédent `date_echeance >= CURDATE()` impliquait "Reste à payer".
+                
+                $dateEcheance = new \DateTime($ech['date_echeance']);
+                if ($dateEcheance >= new \DateTime('today')) {
+                    $total += (float)$ech['montant'];
+                }
+            }
+        }
+        
+        return $total;
     }
 
     public function genererEcheances(int $contratId, int $nombre = 12): int
@@ -213,91 +331,12 @@ class Echeance
      * Génère automatiquement les échéances manquantes pour tous les contrats actifs
      * jusqu'à une date donnée
      */
+    /**
+     * @deprecated Cette méthode n'est plus utilisée, remplacée par la génération virtuelle à la volée
+     */
     public function genererEcheancesManquantes(int $year, int $month): int
     {
-        $contratModel = new Contrat();
-        $contratsActifs = $contratModel->getAll();
-        $totalGenere = 0;
-
-        // Date cible (dernier jour du mois)
-        $dateCible = new \DateTime("$year-$month-01");
-        $dateCible->modify('last day of this month');
-
-        foreach ($contratsActifs as $contrat) {
-            if (!$contrat['actif']) {
-                continue;
-            }
-
-            // Récupérer la dernière échéance du contrat
-            $sql = "SELECT * FROM echeances 
-                    WHERE contrat_id = :contrat_id 
-                    ORDER BY date_echeance DESC 
-                    LIMIT 1";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute(['contrat_id' => $contrat['id']]);
-            $derniereEcheance = $stmt->fetch();
-
-            // Déterminer la date de départ
-            if ($derniereEcheance) {
-                $dateDepart = new \DateTime($derniereEcheance['date_echeance']);
-                $montantBase = $derniereEcheance['montant'];
-            } else {
-                // Pas d'échéance, partir de la date de début du contrat
-                $dateDepart = new \DateTime($contrat['date_debut']);
-                $montantBase = 0;
-            }
-
-            // Générer les échéances manquantes
-            switch ($contrat['frequence']) {
-                case 'mensuel':
-                    $interval = 'P1M';
-                    break;
-                case 'bimensuel':
-                    $interval = 'P2M';
-                    break;
-                case 'trimestriel':
-                    $interval = 'P3M';
-                    break;
-                case 'semestriel':
-                    $interval = 'P6M';
-                    break;
-                default: // annuel
-                    $interval = 'P1Y';
-                    break;
-            }
-            $dateActuelle = clone $dateDepart;
-
-            while ($dateActuelle <= $dateCible) {
-                $dateActuelle->add(new \DateInterval($interval));
-
-                if ($dateActuelle > $dateCible) {
-                    break;
-                }
-
-                // Vérifier si l'échéance existe déjà
-                $sql = "SELECT id FROM echeances 
-                        WHERE contrat_id = :contrat_id 
-                        AND date_echeance = :date";
-                $stmt = $this->db->prepare($sql);
-                $stmt->execute([
-                    'contrat_id' => $contrat['id'],
-                    'date' => $dateActuelle->format('Y-m-d')
-                ]);
-
-                if (!$stmt->fetch()) {
-                    // Créer l'échéance
-                    $this->create([
-                        'contrat_id' => $contrat['id'],
-                        'date_echeance' => $dateActuelle->format('Y-m-d'),
-                        'montant' => $montantBase,
-                        'statut' => 'prevu',
-                    ]);
-                    $totalGenere++;
-                }
-            }
-        }
-
-        return $totalGenere;
+        return 0;
     }
 
     /**
