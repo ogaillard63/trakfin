@@ -4,10 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion - {{ app_name }}</title>
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            300: '#c4b5fd',
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            800: '#5b21b6',
+                            900: '#4c1d95',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="manifest" href="{{ url('/manifest.json') }}">
-    <meta name="theme-color" content="#4F46E5">
+    <meta name="theme-color" content="#7c3aed">
     <link rel="apple-touch-icon" href="{{ url('/public/icons/icon-192x192.png') }}">
     <script>
         if ('serviceWorker' in navigator) {
@@ -17,61 +47,68 @@
         }
     </script>
 </head>
-<body class="bg-gradient-to-br from-indigo-500 to-purple-600 min-h-screen flex items-center justify-center p-4">
-    <div class="w-full max-w-md">
-        <div class="bg-white rounded-2xl shadow-2xl p-6 sm:p-8">
+<body class="bg-slate-900 min-h-screen flex items-center justify-center p-4 relative overflow-hidden font-sans">
+    <!-- Background decoration -->
+    <div class="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div class="absolute top-[-10%] right-[-10%] w-96 h-96 bg-primary-600/20 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-blue-600/20 rounded-full blur-3xl"></div>
+    </div>
+    <div class="w-full max-w-md relative z-10">
+        <div class="bg-white rounded-3xl shadow-2xl p-6 sm:p-10 border border-white/10">
             <!-- Logo -->
             <div class="text-center mb-8">
-                <div class="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div class="w-16 h-16 bg-gradient-to-br from-primary-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg shadow-primary-500/30 transform rotate-3">
                     <i data-lucide="shield-check" class="w-8 h-8 text-white"></i>
                 </div>
-                <h1 class="text-3xl font-bold text-gray-900">{{ app_name }}</h1>
-                <p class="text-gray-500 mt-2">Connexion à votre espace</p>
+                <h1 class="text-3xl font-bold text-slate-800">{{ app_name }}</h1>
+                <p class="text-slate-500 mt-2">Connectez-vous pour accéder à votre dashboard</p>
             </div>
 
             <!-- Message d'erreur -->
             {% if error %}
-            <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
+            <div class="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3">
                 <i data-lucide="alert-circle" class="w-5 h-5 text-red-600 flex-shrink-0"></i>
-                <span class="text-red-800">{{ error }}</span>
+                <span class="text-red-800 text-sm font-medium">{{ error }}</span>
             </div>
             {% endif %}
 
             <!-- Formulaire -->
-            <form method="POST" action="{{ url('/login') }}" class="space-y-6">
+            <form method="POST" action="{{ url('/login') }}" class="space-y-5">
                 <!-- Username -->
                 <div>
-                    <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="username" class="block text-sm font-semibold text-slate-700 mb-2">
                         Nom d'utilisateur
                     </label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i data-lucide="user" class="w-5 h-5 text-gray-400"></i>
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i data-lucide="user" class="w-5 h-5 text-slate-400 group-focus-within:text-primary-500 transition-colors"></i>
                         </div>
                         <input type="text" id="username" name="username" required autofocus
-                               class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                               placeholder="Votre nom d'utilisateur">
+                               class="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-100 focus:border-primary-500 transition-all outline-none"
+                               placeholder="Entrez votre identifiant">
                     </div>
                 </div>
 
                 <!-- Password -->
                 <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-                        Mot de passe
-                    </label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i data-lucide="lock" class="w-5 h-5 text-gray-400"></i>
+                    <div class="flex items-center justify-between mb-2">
+                        <label for="password" class="block text-sm font-semibold text-slate-700">
+                            Mot de passe
+                        </label>
+                    </div>
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i data-lucide="lock" class="w-5 h-5 text-slate-400 group-focus-within:text-primary-500 transition-colors"></i>
                         </div>
                         <input type="password" id="password" name="password" required
-                               class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                               placeholder="Votre mot de passe">
+                               class="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-100 focus:border-primary-500 transition-all outline-none"
+                               placeholder="Entrez votre mot de passe">
                     </div>
                 </div>
 
                 <!-- Submit -->
                 <button type="submit" 
-                        class="w-full py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2">
+                        class="w-full py-3.5 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition-all transform hover:scale-[1.02] shadow-xl shadow-primary-600/20 flex items-center justify-center gap-2 mt-2">
                     <i data-lucide="log-in" class="w-5 h-5"></i>
                     Se connecter
                 </button>
@@ -79,8 +116,8 @@
         </div>
 
         <!-- Footer -->
-        <p class="text-center text-white text-sm mt-6 opacity-80">
-            © {{ "now"|date("Y") }} {{ app_name }} - Gestion de contrats
+        <p class="text-center text-slate-500 text-sm mt-8">
+            © {{ "now"|date("Y") }} {{ app_name }}
         </p>
     </div>
 
