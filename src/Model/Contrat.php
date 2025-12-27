@@ -27,6 +27,9 @@ class Contrat
                        (SELECT e.date_echeance FROM echeances e 
                         WHERE e.contrat_id = c.id AND e.statut = 'prevu'
                         ORDER BY e.date_echeance ASC LIMIT 1) as prochaine_echeance,
+                       (SELECT e.date_echeance FROM echeances e 
+                        WHERE e.contrat_id = c.id AND e.statut = 'paye'
+                        ORDER BY e.date_echeance DESC LIMIT 1) as derniere_echeance_payee,
                        (SELECT COUNT(*) FROM echeances e 
                         WHERE e.contrat_id = c.id) as nb_echeances
                 FROM contrats c

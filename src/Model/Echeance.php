@@ -117,7 +117,11 @@ class Echeance
 
     private function calculeDateEcheanceMois(array $contrat, \DateTime $debutMois, \DateTime $finMois): ?\DateTime
     {
-        $debutContrat = new \DateTime($contrat['date_debut']);
+        if (!empty($contrat['derniere_echeance_payee'])) {
+            $debutContrat = new \DateTime($contrat['derniere_echeance_payee']);
+        } else {
+            $debutContrat = new \DateTime($contrat['date_debut']);
+        }
         
         // Si le contrat commence après le mois en question, pas d'échéance
         if ($debutContrat > $finMois) {

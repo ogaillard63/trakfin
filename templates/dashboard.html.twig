@@ -8,7 +8,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-8">
         <div>
             <h1 class="text-3xl font-bold text-slate-800">Dashboard</h1>
-            <p class="text-slate-500 mt-1">Vue d'ensemble de vos finances</p>
+            <p class="text-slate-500 mt-1">Vue d'ensemble de vos echeances</p>
         </div>
         
         <div class="flex items-center bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200/60">
@@ -42,26 +42,11 @@
 
     <!-- Échéances du mois -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="p-6 sm:p-8 bg-gradient-to-br from-primary-600 to-indigo-700 text-white">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                    <h2 class="text-lg font-medium text-primary-100 mb-1">Total ce mois-ci</h2>
-                    <div class="text-4xl sm:text-5xl font-bold tracking-tight">
-                        {{ total_mois|money }}
-                    </div>
-                </div>
-                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 hidden sm:block">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2 bg-white/20 rounded-lg">
-                            <i data-lucide="calendar" class="w-6 h-6 text-white"></i>
-                        </div>
-                        <div>
-                            <div class="text-sm text-primary-100">Échéances</div>
-                            <div class="font-bold text-lg">{{ echeances_mois|length }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+            <h2 class="font-semibold text-slate-700 flex items-center gap-2">
+                <i data-lucide="calendar" class="w-5 h-5 text-slate-400"></i>
+                Échéances du mois
+            </h2>
         </div>
         
         <div class="divide-y divide-slate-100 bg-white">
@@ -117,6 +102,18 @@
                     <p class="text-slate-500">Aucune échéance prévue pour ce mois-ci</p>
                 </div>
             {% endif %}
+        </div>
+        <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="text-slate-500 font-medium flex items-center gap-2">
+                <div class="p-1.5 bg-white border border-slate-200 rounded-md shadow-sm">
+                    <i data-lucide="list-todo" class="w-4 h-4 text-slate-400"></i>
+                </div>
+                <span>{{ echeances_mois|length }} échéance{% if echeances_mois|length > 1 %}s{% endif %}</span>
+            </div>
+            <div class="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
+                <span class="text-slate-500 font-medium">Total ce mois-ci</span>
+                <span class="text-2xl font-bold text-slate-800">{{ total_mois|money }}</span>
+            </div>
         </div>
     </div>
 
