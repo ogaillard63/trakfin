@@ -3,17 +3,19 @@
 {% block title %}Contrats - {{ app_name }}{% endblock %}
 
 {% block content %}
-<div class="space-y-6">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Mes Contrats</h1>
+<div class="space-y-8">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-800">Mes Contrats</h1>
+            <p class="text-slate-500 mt-1">Gérez vos abonnements et charges fixes</p>
+        </div>
         <a href="{{ url('/contrats/create') }}" 
-           class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center justify-center sm:justify-start text-sm sm:text-base">
-            <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+           class="px-5 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 shadow-lg shadow-primary-600/20 flex items-center justify-center sm:justify-start text-sm font-medium transition-all hover:scale-105">
+            <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
             Nouveau contrat
         </a>
     </div>
 
-    <!-- Grille de cartes -->
     <!-- Grille de cartes groupées par catégorie -->
     {% set current_category = null %}
     
@@ -27,77 +29,84 @@
             {% set current_category = contrat.categorie_nom %}
             
             {# En-tête de catégorie #}
-            <div class="mt-8 mb-4 flex items-center">
-                <h2 class="text-xl font-bold text-gray-800 flex items-center">
-                    <span class="w-3 h-3 rounded-full mr-3" style="background-color: {{ contrat.categorie_couleur }}"></span>
+            <div class="mt-8 mb-6 flex items-center">
+                <h2 class="text-lg font-bold text-slate-700 flex items-center uppercase tracking-wide">
+                    <span class="w-2.5 h-8 rounded-full mr-3" style="background-color: {{ contrat.categorie_couleur }}"></span>
                     {{ current_category }}
                 </h2>
-                <div class="flex-1 border-b border-gray-200 ml-4"></div>
+                <div class="flex-1 border-b border-slate-100 ml-4"></div>
             </div>
             
             {# Ouvrir nouvelle grille #}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% endif %}
         
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-            <div class="p-4">
+        <a href="{{ url('/contrats/' ~ contrat.id) }}" class="block group">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 transition-all duration-300 hover:shadow-xl hover:border-primary-100 hover:-translate-y-1 relative overflow-hidden h-full flex flex-col">
+                <!-- Hover gradient overlay -->
+                <div class="absolute inset-0 bg-gradient-to-br from-primary-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                
                 <!-- Header de la carte -->
-                <div class="flex items-start justify-between mb-3">
+                <div class="flex items-start justify-between mb-4 relative z-10">
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-lg flex items-center justify-center" 
-                             style="background-color: {{ contrat.categorie_couleur }}20; color: {{ contrat.categorie_couleur }}">
-                            <i data-lucide="{{ contrat.categorie_icone }}" class="w-5 h-5"></i>
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm" 
+                             style="background-color: {{ contrat.categorie_couleur }}15; color: {{ contrat.categorie_couleur }}">
+                            <i data-lucide="{{ contrat.categorie_icone }}" class="w-6 h-6"></i>
                         </div>
                         <div>
-                            <h3 class="font-semibold text-gray-900">{{ contrat.nom }}</h3>
-                            <p class="text-sm text-gray-500">{{ contrat.fournisseur }}</p>
+                            <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-primary-700 transition-colors">{{ contrat.nom }}</h3>
+                            <p class="text-sm text-slate-500 font-medium">{{ contrat.fournisseur }}</p>
                         </div>
                     </div>
-                    <!-- Bouton éditer -->
-                    <a href="{{ url('/contrats/' ~ contrat.id) }}" 
-                       class="text-gray-400 hover:text-indigo-600">
-                        <i data-lucide="edit-2" class="w-5 h-5"></i>
-                    </a>
+                    <!-- Icone edit invisible par défaut, visible au hover -->
+                    <div class="text-slate-300 group-hover:text-primary-500 transition-colors">
+                        <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                    </div>
                 </div>
 
-                <!-- Infos sur une ligne : Fréquence, Montant -->
-                <div class="flex items-center justify-between text-sm">
-                    <div class="flex items-center space-x-2">
-                        <span class="text-gray-500">
-                            {% if contrat.frequence == 'mensuel' %}Mensuel
-                            {% elseif contrat.frequence == 'bimensuel' %}Bimensuel
-                            {% elseif contrat.frequence == 'trimestriel' %}Trimestriel
-                            {% elseif contrat.frequence == 'semestriel' %}Semestriel
-                            {% else %}Annuel{% endif %}
-                        </span>
-                    </div>
-                    {% if contrat.dernier_montant %}
-                        <div class="text-lg font-bold text-gray-900">
-                            {{ contrat.dernier_montant|money }}
+                <div class="mt-auto relative z-10">
+                    <!-- Infos sur une ligne : Fréquence, Montant -->
+                    <div class="flex items-center justify-between text-sm border-t border-slate-50 pt-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold uppercase tracking-wider">
+                                {% if contrat.frequence == 'mensuel' %}Mensuel
+                                {% elseif contrat.frequence == 'bimensuel' %}Bimensuel
+                                {% elseif contrat.frequence == 'trimestriel' %}Trimestriel
+                                {% elseif contrat.frequence == 'semestriel' %}Semestriel
+                                {% else %}Annuel{% endif %}
+                            </span>
                         </div>
-                    {% else %}
-                        <div class="text-sm text-gray-400 italic">—</div>
+                        {% if contrat.dernier_montant %}
+                            <div class="text-xl font-bold text-slate-800">
+                                {{ contrat.dernier_montant|money }}
+                            </div>
+                        {% else %}
+                            <div class="text-sm text-slate-400 italic">—</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Prochaine échéance -->
+                    {% if contrat.prochaine_echeance %}
+                    <div class="mt-3 flex items-center gap-2 text-xs font-medium text-slate-500">
+                        <i data-lucide="calendar-clock" class="w-3.5 h-3.5"></i>
+                        Prochaine : <span class="text-slate-700">{{ contrat.prochaine_echeance|date_fr }}</span>
+                    </div>
                     {% endif %}
                 </div>
-
-                <!-- Prochaine échéance (optionnel) -->
-                {% if contrat.prochaine_echeance %}
-                <div class="mt-2 text-xs text-gray-500">
-                    Prochaine : {{ contrat.prochaine_echeance|date_fr }}
-                </div>
-                {% endif %}
             </div>
-        </div>
+        </a>
         
     {% else %}
         <div class="col-span-full">
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-                <i data-lucide="file-text" class="w-16 h-16 mx-auto mb-4 text-gray-300"></i>
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun contrat</h3>
-                <p class="text-gray-500 mb-4">Commencez par créer votre premier contrat</p>
+            <div class="bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 p-12 text-center">
+                <div class="w-20 h-20 bg-white rounded-full shadow-sm flex items-center justify-center mx-auto mb-6">
+                    <i data-lucide="file-plus" class="w-10 h-10 text-primary-200"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">Aucun contrat</h3>
+                <p class="text-slate-500 mb-6 max-w-sm mx-auto">Vous n'avez pas encore ajouté de contrat. Commencez dès maintenant pour suivre vos dépenses.</p>
                 <a href="{{ url('/contrats/create') }}" 
-                   class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-                    <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                   class="inline-flex items-center px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 shadow-lg shadow-primary-600/30 font-medium transition-all hover:-translate-y-0.5">
+                    <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
                     Créer un contrat
                 </a>
             </div>

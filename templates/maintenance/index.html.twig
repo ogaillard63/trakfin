@@ -1,58 +1,66 @@
 {% extends "base.html.twig" %}
 
 {% block content %}
-<div class="space-y-6">
+<div class="space-y-8">
     <div class="flex items-center justify-between">
         <div>
-            <h2 class="text-2xl font-bold text-gray-900">Maintenance</h2>
-            <p class="text-sm text-gray-500 mt-1">Gérez les sauvegardes et la restauration de la base de données</p>
+            <h1 class="text-3xl font-bold text-slate-800">Maintenance</h1>
+            <p class="text-slate-500 mt-1">Gérez les sauvegardes et la restauration de la base de données</p>
         </div>
         <form action="{{ url('/maintenance/backup') }}" method="POST">
-            <button type="submit" class="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
+            <button type="submit" class="flex items-center px-5 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all shadow-lg shadow-primary-600/20 hover:scale-105 active:scale-95">
                 <i data-lucide="save" class="w-5 h-5 mr-2"></i>
                 Créer une sauvegarde
             </button>
         </form>
     </div>
 
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-            <h3 class="font-medium text-gray-700">Dernières sauvegardes</h3>
-            <span class="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-full">{{ backups|length }} fichiers</span>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between backdrop-blur-sm">
+            <h3 class="font-bold text-slate-700 flex items-center gap-2">
+                <i data-lucide="history" class="w-5 h-5 text-slate-400"></i>
+                Dernières sauvegardes
+            </h3>
+            <span class="text-xs font-semibold text-primary-700 bg-primary-50 px-3 py-1 rounded-full">{{ backups|length }} fichiers</span>
         </div>
         
         {% if backups is empty %}
-            <div class="p-8 text-center text-gray-500">
-                <i data-lucide="archive" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
-                <p>Aucune sauvegarde disponible</p>
+            <div class="p-12 text-center text-slate-500">
+                <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                    <i data-lucide="archive" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-lg font-medium text-slate-900">Aucune sauvegarde</h3>
+                <p class="text-slate-500">Créez votre première sauvegarde pour sécuriser vos données</p>
             </div>
         {% else %}
             <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm text-gray-500">
-                    <thead class="bg-gray-50 text-xs uppercase text-gray-700">
+                <table class="w-full text-left text-sm text-slate-600">
+                    <thead class="bg-slate-50 text-xs uppercase font-semibold text-slate-500 tracking-wider">
                         <tr>
-                            <th scope="col" class="px-6 py-3">Fichier</th>
-                            <th scope="col" class="px-6 py-3">Date</th>
-                            <th scope="col" class="px-6 py-3">Taille</th>
-                            <th scope="col" class="px-6 py-3 text-right">Actions</th>
+                            <th scope="col" class="px-6 py-4">Fichier</th>
+                            <th scope="col" class="px-6 py-4">Date</th>
+                            <th scope="col" class="px-6 py-4">Taille</th>
+                            <th scope="col" class="px-6 py-4 text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200">
+                    <tbody class="divide-y divide-slate-100">
                         {% for backup in backups %}
-                        <tr class="hover:bg-gray-50 transition-colors">
-                            <td class="px-6 py-4 font-medium text-gray-900">
+                        <tr class="hover:bg-slate-50/80 transition-colors group">
+                            <td class="px-6 py-4 font-medium text-slate-900 text-base">
                                 <div class="flex items-center">
-                                    <i data-lucide="file-archive" class="w-4 h-4 mr-2 text-indigo-500"></i>
+                                    <div class="p-2 bg-indigo-50 text-indigo-600 rounded-lg mr-3 group-hover:bg-indigo-100 transition-colors">
+                                        <i data-lucide="database" class="w-4 h-4"></i>
+                                    </div>
                                     {{ backup.name }}
                                 </div>
                             </td>
-                            <td class="px-6 py-4">{{ backup.date }}</td>
-                            <td class="px-6 py-4 font-mono text-xs">{{ backup.size }}</td>
+                            <td class="px-6 py-4 text-slate-500">{{ backup.date }}</td>
+                            <td class="px-6 py-4 font-mono text-xs text-slate-400 bg-slate-50 inline-flex rounded mt-4 mx-6">{{ backup.size }}</td>
                             <td class="px-6 py-4 text-right">
                                 <form action="{{ url('/maintenance/restore') }}" method="POST" class="inline-block" onsubmit="return confirm('ATENTION : Êtes-vous sûr de vouloir restaurer cette sauvegarde ?\n\nLa base de données actuelle sera ÉCRASÉE et toutes les données récentes non sauvegardées seront PERDUES.\n\nCette action est irréversible.');">
                                     <input type="hidden" name="filename" value="{{ backup.name }}">
-                                    <button type="submit" class="flex items-center text-indigo-600 hover:text-indigo-900 font-medium text-xs px-3 py-1 border border-indigo-200 rounded hover:bg-indigo-50 transition-colors">
-                                        <i data-lucide="rotate-ccw" class="w-3 h-3 mr-1"></i>
+                                    <button type="submit" class="flex items-center text-primary-600 hover:text-primary-800 font-semibold text-xs px-3 py-1.5 border border-primary-100 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors ml-auto">
+                                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 mr-1.5"></i>
                                         Restaurer
                                     </button>
                                 </form>

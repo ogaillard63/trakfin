@@ -4,18 +4,53 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ app_name }}{% endblock %}</title>
+    
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            300: '#c4b5fd',
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            800: '#5b21b6',
+                            900: '#4c1d95',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="manifest" href="{{ url('/manifest.json') }}">
     <script>
         window.APP_API_URL = "{{ url('/api/sync') }}";
     </script>
     <script src="{{ url('/public/js/sync.js') }}" defer></script>
-    <meta name="theme-color" content="#4F46E5">
+    <meta name="theme-color" content="#7c3aed">
     <link rel="icon" type="image/png" href="{{ url('/public/icons/icon-192x192.png') }}">
     <link rel="apple-touch-icon" href="{{ url('/public/icons/icon-192x192.png') }}">
     <style>
         [x-cloak] { display: none !important; }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+        }
     </style>
     <script>
         if ('serviceWorker' in navigator) {
@@ -67,77 +102,76 @@
         });
     </script>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50 text-gray-800 font-sans antialiased">
     <!-- Overlay pour mobile -->
-    <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden lg:hidden"></div>
+    <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-40 hidden lg:hidden transition-opacity"></div>
     
     <!-- Navigation latérale -->
-    <div class="flex h-screen">
+    <div class="flex h-screen overflow-hidden">
         <!-- Sidebar -->
-        <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
-            <div class="p-6 flex items-center justify-between">
-                <h1 class="text-2xl font-bold text-indigo-600">{{ app_name }}</h1>
+        <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-50 w-72 bg-slate-900 text-white shadow-2xl flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out border-r border-slate-800">
+            <div class="p-6 flex items-center justify-between border-b border-slate-800/50">
+                <h1 class="text-3xl font-bold bg-gradient-to-r from-primary-400 to-primary-200 bg-clip-text text-transparent">{{ app_name }}</h1>
                 <!-- Bouton fermer pour mobile -->
-                <button id="close-sidebar" class="lg:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
+                <button id="close-sidebar" class="lg:hidden p-2 text-slate-400 hover:bg-slate-800 rounded-lg transition-colors">
                     <i data-lucide="x" class="w-6 h-6"></i>
                 </button>
             </div>
             
-            <nav class="px-4 space-y-1 flex-1">
+            <nav class="p-4 space-y-2 flex-1 overflow-y-auto">
                 <a href="{{ url('/') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 {% if current_page == 'dashboard' %}bg-indigo-50 text-indigo-600{% endif %}">
-                    <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i>
-                    Dashboard
+                   class="flex items-center px-4 py-3.5 rounded-xl transition-all duration-200 group {% if current_page == 'dashboard' %}bg-primary-600 text-white shadow-lg shadow-primary-900/20{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %}">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3 {% if current_page == 'dashboard' %}text-white{% else %}text-slate-500 group-hover:text-white transition-colors{% endif %}"></i>
+                    <span class="font-medium">Dashboard</span>
                 </a>
                 
                 <a href="{{ url('/contrats') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 {% if current_page == 'contrats' %}bg-indigo-50 text-indigo-600{% endif %}">
-                    <i data-lucide="file-text" class="w-5 h-5 mr-3"></i>
-                    Contrats
+                   class="flex items-center px-4 py-3.5 rounded-xl transition-all duration-200 group {% if current_page == 'contrats' %}bg-primary-600 text-white shadow-lg shadow-primary-900/20{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %}">
+                    <i data-lucide="file-text" class="w-5 h-5 mr-3 {% if current_page == 'contrats' %}text-white{% else %}text-slate-500 group-hover:text-white transition-colors{% endif %}"></i>
+                    <span class="font-medium">Contrats</span>
                 </a>
 
                 <a href="{{ url('/maintenance') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 {% if current_page == 'maintenance' %}bg-indigo-50 text-indigo-600{% endif %}">
-                    <i data-lucide="database" class="w-5 h-5 mr-3"></i>
-                    Maintenance
+                   class="flex items-center px-4 py-3.5 rounded-xl transition-all duration-200 group {% if current_page == 'maintenance' %}bg-primary-600 text-white shadow-lg shadow-primary-900/20{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %}">
+                    <i data-lucide="database" class="w-5 h-5 mr-3 {% if current_page == 'maintenance' %}text-white{% else %}text-slate-500 group-hover:text-white transition-colors{% endif %}"></i>
+                    <span class="font-medium">Maintenance</span>
                 </a>
             </nav>
             
             <!-- Sync & Déconnexion -->
-            <div class="p-4 border-t border-gray-200 space-y-2">
+            <div class="p-4 border-t border-slate-800/50 space-y-2 bg-slate-900/50">
                 <button onclick="window.forceSync()" 
-                        class="w-full flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors group">
-                    <i id="btn-sync" data-lucide="refresh-cw" class="w-5 h-5 mr-3 text-gray-400 group-hover:text-indigo-600 transition-colors"></i>
-                    Synchroniser
+                        class="w-full flex items-center px-4 py-3 text-slate-400 rounded-xl hover:bg-slate-800 hover:text-white transition-all group">
+                    <i id="btn-sync" data-lucide="refresh-cw" class="w-5 h-5 mr-3 text-slate-500 group-hover:text-primary-400 transition-colors"></i>
+                    <span class="font-medium">Synchroniser</span>
                 </button>
                 
                 <a href="{{ url('/about') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 {% if current_page == 'about' %}bg-indigo-50 text-indigo-600{% endif %}">
-                    <i data-lucide="info" class="w-5 h-5 mr-3"></i>
-                    À propos
+                   class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group {% if current_page == 'about' %}bg-primary-600 text-white shadow-lg shadow-primary-900/20{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %}">
+                    <i data-lucide="info" class="w-5 h-5 mr-3 {% if current_page == 'about' %}text-white{% else %}text-slate-500 group-hover:text-white transition-colors{% endif %}"></i>
+                    <span class="font-medium">À propos</span>
                 </a>
 
                 <a href="{{ url('/logout') }}" 
-                   class="flex items-center px-4 py-3 text-red-600 rounded-lg hover:bg-red-50">
-                    <i data-lucide="log-out" class="w-5 h-5 mr-3"></i>
-                    Déconnexion
+                   class="flex items-center px-4 py-3 text-red-400 rounded-xl hover:bg-red-500/10 hover:text-red-300 transition-all">
+                    <i data-lucide="log-out" class="w-5 h-5 mr-3 opacity-75"></i>
+                    <span class="font-medium">Déconnexion</span>
                 </a>
             </div>
         </aside>
 
         <!-- Contenu principal -->
-        <main class="flex-1 overflow-y-auto w-full lg:w-auto">
+        <main class="flex-1 overflow-y-auto w-full lg:w-auto relative">
             <!-- Header mobile avec menu hamburger -->
-            <div class="lg:hidden sticky top-0 z-30 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
-                <button id="open-sidebar" class="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg border border-gray-300">
-                    <i data-lucide="menu" class="w-5 h-5"></i>
-                    <span class="text-sm font-medium">Menu</span>
+            <div class="lg:hidden sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
+                <button id="open-sidebar" class="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg border border-gray-200/50">
+                    <i data-lucide="menu" class="w-5 h-5 text-gray-600"></i>
                 </button>
-                <h1 class="text-lg font-bold text-indigo-600">{{ app_name }}</h1>
-                <div class="w-16"></div> <!-- Spacer pour centrer le titre -->
+                <h1 class="text-xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent">{{ app_name }}</h1>
+                <div class="w-10"></div> <!-- Spacer -->
             </div>
             
-            <div class="w-full p-4 sm:p-6 lg:p-8">
+            <div class="w-full p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
                 {% block content %}{% endblock %}
             </div>
         </main>
