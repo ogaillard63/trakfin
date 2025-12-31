@@ -45,20 +45,36 @@ $router->get('/login', function () {
         Router::redirect('/');
     }
     
+    $isBlocked = Auth::isBlocked();
+    $blockedTime = Auth::getBlockedTimeRemaining();
+    
     View::display('login.html.twig', [
         'error' => $_SESSION['login_error'] ?? null,
+        'is_blocked' => $isBlocked,
+        'blocked_time' => $blockedTime,
+        'attempts' => $_SESSION['login_attempts'] ?? 0
     ]);
     unset($_SESSION['login_error']);
 });
 
 $router->post('/login', function () {
-    $username = $_POST['username'] ?? '';
-    $password = $_POST['password'] ?? '';
+    $code = $_POST['password'] ?? '';
     
-    if (Auth::login($username, $password)) {
+    if (Auth::isBlocked()) {
+        $_SESSION['login_error'] = 'Trop de tentatives. Veuillez patienter.';
+        Router::redirect('/login');
+        return;
+    }
+
+    if (Auth::loginWithCode($code)) {
         Router::redirect('/');
     } else {
-        $_SESSION['login_error'] = 'Identifiants incorrects';
+        $attempts = $_SESSION['login_attempts'] ?? 0;
+        if ($attempts >= 3) {
+            $_SESSION['login_error'] = 'Compte bloqué après 3 tentatives erronées.';
+        } else {
+            $_SESSION['login_error'] = 'Code incorrect. Tentative ' . $attempts . '/3';
+        }
         Router::redirect('/login');
     }
 });

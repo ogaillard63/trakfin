@@ -16,25 +16,76 @@ class Auth
     }
 
     /**
-     * Connecte l'utilisateur
+     * Connecte l'utilisateur avec un code à 4 chiffres
      */
-    public static function login(string $username, string $password): bool
+    public static function loginWithCode(string $code): bool
     {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
 
-        // Récupérer les identifiants depuis .env
-        $validUsername = $_ENV['AUTH_USERNAME'] ?? 'admin';
-        $validPassword = $_ENV['AUTH_PASSWORD'] ?? 'admin';
+        if (self::isBlocked()) {
+            return false;
+        }
 
-        if ($username === $validUsername && $password === $validPassword) {
+        // Récupérer le code depuis .env
+        $validCode = $_ENV['APP_PASSWORD'] ?? '1234';
+
+        if ($code === $validCode) {
             $_SESSION['authenticated'] = true;
-            $_SESSION['username'] = $username;
+            $_SESSION['username'] = 'admin';
+            unset($_SESSION['login_attempts']);
+            unset($_SESSION['blocked_until']);
             return true;
         }
 
+        // Incrémenter les tentatives
+        $_SESSION['login_attempts'] = ($_SESSION['login_attempts'] ?? 0) + 1;
+        
+        if ($_SESSION['login_attempts'] >= 3) {
+            $_SESSION['blocked_until'] = time() + (15 * 60); // Bloqué pendant 15 minutes
+        }
+
         return false;
+    }
+
+    /**
+     * Vérifie si l'utilisateur est actuellement bloqué
+     */
+    public static function isBlocked(): bool
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (isset($_SESSION['blocked_until']) && $_SESSION['blocked_until'] > time()) {
+            return true;
+        }
+
+        // Si le temps de blocage est passé, on réinitialise
+        if (isset($_SESSION['blocked_until'])) {
+            unset($_SESSION['blocked_until']);
+            unset($_SESSION['login_attempts']);
+        }
+
+        return false;
+    }
+
+    /**
+     * Retourne le temps restant de blocage en secondes
+     */
+    public static function getBlockedTimeRemaining(): int
+    {
+        if (!isset($_SESSION['blocked_until'])) return 0;
+        return max(0, $_SESSION['blocked_until'] - time());
+    }
+
+    /**
+     * Connecte l'utilisateur (Ancienne méthode conservée pour compatibilité si besoin, mais dépréciée)
+     */
+    public static function login(string $username, string $password): bool
+    {
+        return self::loginWithCode($password);
     }
 
     /**
