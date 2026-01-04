@@ -1,0 +1,61 @@
+{% extends 'base.html.twig' %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="mb-6 flex items-center gap-4">
+        <a href="{{ url('/banques') }}" class="p-2 rounded-lg hover:bg-white text-gray-500 hover:text-gray-900 transition-colors">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        </a>
+        <h2 class="text-2xl font-bold text-gray-900">
+            {% if compte %}Modifier le compte{% else %}Ajouter un compte{% endif %}
+        </h2>
+    </div>
+
+    <form method="POST" action="{{ compte ? url('/comptes/' ~ compte.id ~ '/edit') : url('/comptes/create') }}" class="bg-white rounded-2xl shadow-sm p-6 space-y-6">
+        
+        <div>
+            <label for="banque_id" class="block text-sm font-medium text-gray-700 mb-1">Banque</label>
+            <select name="banque_id" id="banque_id" required class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5 border">
+                {% for b in banques %}
+                    <option value="{{ b.id }}" {% if (compte.banque_id ?? banque_id) == b.id %}selected{% endif %}>{{ b.nom }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="nom" class="block text-sm font-medium text-gray-700 mb-1">Nom du compte</label>
+            <input type="text" name="nom" id="nom" required
+                   value="{{ compte.nom ?? '' }}"
+                   placeholder="Ex: Compte Courant, Livret A..."
+                   class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5 border">
+        </div>
+
+        <div>
+            <label for="numero" class="block text-sm font-medium text-gray-700 mb-1">Numéro de compte (optionnel)</label>
+            <input type="text" name="numero" id="numero"
+                   value="{{ compte.numero ?? '' }}"
+                   placeholder="FR76 ..."
+                   class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5 border">
+        </div>
+
+        <div>
+            <label for="solde_initial" class="block text-sm font-medium text-gray-700 mb-1">Solde initial</label>
+            <div class="relative rounded-md shadow-sm">
+                <input type="number" name="solde_initial" id="solde_initial" step="0.01" required
+                       value="{{ compte.solde_initial ?? '0.00' }}"
+                       class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5 border pr-12">
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <span class="text-gray-500 sm:text-sm">€</span>
+                </div>
+            </div>
+            <p class="mt-1 text-xs text-gray-500">Solde au moment de la création du compte dans l'application.</p>
+        </div>
+
+        <div class="flex justify-end pt-4">
+            <button type="submit" class="inline-flex items-center px-6 py-2.5 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                {% if compte %}Enregistrer{% else %}Créer le compte{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

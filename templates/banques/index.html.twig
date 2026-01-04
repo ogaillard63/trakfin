@@ -1,0 +1,75 @@
+{% extends 'base.html.twig' %}
+
+{% block container_width %}max-w-full{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-bold text-gray-900">Banques & Comptes</h2>
+        <a href="{{ url('/banques/create') }}" 
+           class="inline-flex items-center px-4 py-2 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+            <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+            Ajouter une banque
+        </a>
+    </div>
+
+    {% if banques is empty %}
+        <div class="bg-white rounded-2xl shadow-sm p-12 text-center">
+            <div class="w-16 h-16 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="landmark" class="w-8 h-8"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Aucune banque configurée</h3>
+            <p class="text-gray-500 mb-6">Commencez par ajouter votre première banque pour suivre vos comptes.</p>
+            <a href="{{ url('/banques/create') }}" class="text-primary-600 font-medium hover:text-primary-700">Ajouter une banque &rarr;</a>
+        </div>
+    {% else %}
+        <div class="space-y-8">
+            {% for banque in banques %}
+            <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-md transition-shadow">
+                <div class="p-6 border-b border-gray-100 flex items-center justify-between" style="border-left: 6px solid {{ banque.couleur }}">
+                    <div class="flex items-center gap-6">
+                        {% if banque.logo_url %}
+                            <img src="{{ banque.logo_url }}" alt="{{ banque.nom }}" class="w-32 h-16 object-contain">
+                        {% else %}
+                            <div class="w-16 h-16 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-sm" style="background-color: {{ banque.couleur }}">
+                                {{ banque.nom|slice(0, 2)|upper }}
+                            </div>
+                        {% endif %}
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">{{ banque.nom }}</h3>
+                            <p class="text-sm text-gray-500">{{ banque.comptes|length }} compte(s)</p>
+                        </div>
+                    </div>
+                    <a href="{{ url('/banques/' ~ banque.id ~ '/edit') }}" class="p-2 text-gray-400 hover:text-primary-600 hover:bg-gray-50 rounded-lg transition-colors">
+                        <i data-lucide="settings-2" class="w-6 h-6"></i>
+                    </a>
+                </div>
+                
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {% for compte in banque.comptes %}
+                        <a href="{{ url('/comptes/' ~ compte.id) }}" class="block p-4 rounded-xl bg-gray-50 hover:bg-white hover:shadow-md hover:border-primary-200 border border-transparent transition-all group">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-medium text-gray-900 group-hover:text-primary-700">{{ compte.nom }}</span>
+                                <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300 group-hover:text-primary-400"></i>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-500 font-mono text-sm">{{ compte.numero }}</span>
+                                {% set solde = compte.solde_actuel ?? (compte.solde_initial + 0) %}
+                                <span class="font-bold text-lg text-gray-900">{{ solde|number_format(2, ',', ' ') }} €</span>
+                            </div>
+                        </a>
+                        {% endfor %}
+                        
+                        <a href="{{ url('/comptes/create?banque_id=' ~ banque.id) }}" class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 hover:border-primary-300 hover:text-primary-600 hover:bg-primary-50 transition-all gap-2 min-h-[100px]">
+                            <i data-lucide="plus-circle" class="w-8 h-8 opacity-50"></i>
+                            <span class="font-medium">Ajouter un compte</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

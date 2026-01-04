@@ -1,0 +1,74 @@
+{% extends 'base.html.twig' %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <div class="flex items-center gap-2 mb-4">
+        <a href="{{ url('/comptes/' ~ compte_id) }}" class="text-gray-400 hover:text-gray-600">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        </a>
+        <h2 class="text-2xl font-bold text-gray-900">Rapport d'importation</h2>
+    </div>
+
+    <!-- Résumé -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div class="text-sm text-gray-500 mb-1">Total lignes traitées</div>
+            <div class="text-3xl font-bold text-gray-900">{{ stats.lines_processed }}</div>
+        </div>
+        <div class="bg-green-50 p-6 rounded-2xl shadow-sm border border-green-100">
+            <div class="text-sm text-green-600 font-medium mb-1">Importées avec succès</div>
+            <div class="text-3xl font-bold text-green-700">{{ stats.imported }}</div>
+        </div>
+        <div class="bg-amber-50 p-6 rounded-2xl shadow-sm border border-amber-100">
+            <div class="text-sm text-amber-600 font-medium mb-1">Doublons ignorés</div>
+            <div class="text-3xl font-bold text-amber-700">{{ stats.duplicates }}</div>
+        </div>
+    </div>
+
+    {% if stats.errors > 0 %}
+    <div class="bg-red-50 p-4 rounded-xl border border-red-100 flex items-center gap-3 text-red-700">
+        <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+        <span><strong>{{ stats.errors }}</strong> erreurs rencontrées lors de l'analyse du fichier.</span>
+    </div>
+    {% endif %}
+
+    <!-- Liste des doublons -->
+    {% if duplicates is not empty %}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="p-4 border-b border-gray-100 bg-gray-50">
+            <h3 class="font-semibold text-gray-900 flex items-center gap-2">
+                <i data-lucide="copy" class="w-4 h-4 text-amber-500"></i>
+                Détail des doublons ignorés
+            </h3>
+            <p class="text-sm text-gray-500 mt-1">Ces transactions existent déjà dans la base de données (détection par signature unique).</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-gray-600">
+                <thead class="bg-gray-50 text-gray-700 font-medium border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-3">Date</th>
+                        <th class="px-6 py-3">Description</th>
+                        <th class="px-6 py-3 text-right">Montant</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for dup in duplicates %}
+                    <tr class="hover:bg-amber-50/50">
+                        <td class="px-6 py-3 font-mono text-gray-500">{{ dup.date }}</td>
+                        <td class="px-6 py-3">{{ dup.description }}</td>
+                        <td class="px-6 py-3 text-right font-medium text-gray-900">{{ dup.montant|number_format(2, ',', ' ') }} €</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="flex justify-end pt-4">
+        <a href="{{ url('/comptes/' ~ compte_id) }}" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-xl shadow-sm text-white bg-primary-600 hover:bg-primary-700">
+            Retour au compte
+        </a>
+    </div>
+</div>
+{% endblock %}

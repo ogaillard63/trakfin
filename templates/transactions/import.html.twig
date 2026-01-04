@@ -1,0 +1,59 @@
+{% extends 'base.html.twig' %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="mb-6 flex items-center gap-4">
+        <a href="{{ url('/comptes/' ~ compte.id) }}" class="p-2 rounded-lg hover:bg-white text-gray-500 hover:text-gray-900 transition-colors">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        </a>
+        <h2 class="text-2xl font-bold text-gray-900">
+            Importer des transactions - {{ compte.nom }}
+        </h2>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm p-6 space-y-6">
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i data-lucide="info" class="h-5 w-5 text-blue-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-blue-700">
+                        Copiez-collez vos transactions depuis votre relevé bancaire (Excel ou CSV).
+                        <br>
+                        Formats acceptés : 
+                        <ul class="list-disc pl-5 mt-1">
+                            <li><strong>Date</strong> ; <strong>Description</strong> ; <strong>Montant</strong></li>
+                            <li>Format export : <strong>dateOp</strong> ; dateVal ; <strong>label</strong> ... <strong>amount</strong> ...</li>
+                        </ul>
+                    </p>
+                    <p class="text-xs text-blue-500 mt-1">Les doublons sont automatiquement détectés.</p>
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url('/comptes/' ~ compte.id ~ '/import') }}">
+            <div>
+                <label for="content" class="block text-sm font-medium text-gray-700 mb-2">Contenu à importer</label>
+                <textarea name="content" id="content" rows="15" required
+                          class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 font-mono text-sm p-3 border placeholder-gray-400"
+                          placeholder="JJ/MM/AAAA;Description;Montant"></textarea>
+            </div>
+
+            <div class="pt-4">
+                <label class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                    <input type="checkbox" name="force_import" value="1" class="h-5 w-5 rounded border-gray-300 text-primary-600 focus:ring-primary-500">
+                    <span class="text-sm font-medium text-gray-700">Forcer l'importation (désactiver la protection anti-doublons)</span>
+                </label>
+            </div>
+
+            <div class="flex justify-end pt-4">
+                <button type="submit" class="inline-flex items-center px-6 py-2.5 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                    Lancer l'importation
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
